@@ -3,10 +3,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'home_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future<void> main() async {
+
+  await dotenv.load(fileName: ".env");
+
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -16,14 +22,31 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Todo App',
+
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        brightness: Brightness.light,
+        scaffoldBackgroundColor:
+            const Color(0xFFF5F7FB),
+
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF6C63FF),
+        ),
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Colors.black,
+        ),
+
+        cardTheme: const CardThemeData(
+        elevation: 4,
+        ),
       ),
+
       home: const LoginScreen(),
     );
   }
 }
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -72,7 +95,9 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => const TodoScreen(),
+            builder: (_) => HomeScreen(
+              token: accessToken, 
+            ),
           ),
         );
       } else {
@@ -139,7 +164,13 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class TodoScreen extends StatefulWidget {
-  const TodoScreen({super.key});
+
+  final String token;
+
+  const TodoScreen({
+    super.key,
+    required this.token,
+  });
 
   @override
   State<TodoScreen> createState() => _TodoScreenState();
@@ -154,22 +185,16 @@ class _TodoScreenState extends State<TodoScreen> {
   final String baseUrl =
       "http://10.0.2.2:8000/api/tasks/";
 
-  String token = "";
+late String token;
 
-  @override
-  void initState() {
-    super.initState();
-    loadToken();
-  }
+@override
+void initState() {
+  super.initState();
 
-  Future<void> loadToken() async {
-    SharedPreferences prefs =
-        await SharedPreferences.getInstance();
+  token = widget.token;
 
-    token = prefs.getString('access_token') ?? "";
-
-    fetchTodos();
-  }
+  fetchTodos();
+}
 
   Future<void> fetchTodos() async {
     try {
@@ -240,6 +265,38 @@ class _TodoScreenState extends State<TodoScreen> {
       print(e);
     }
   }
+  Future<void> toggleTask(int id) async {
+
+  try {
+
+    final response = await http.patch(
+
+      Uri.parse(
+        "http://10.0.2.2:8000/api/tasks/toggle/$id/",
+      ),
+
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    print(response.statusCode);
+
+    print(response.body);
+
+    if (response.statusCode == 200) {
+
+      await fetchTodos();
+
+      setState(() {});
+    }
+
+  } catch (e) {
+
+    print(e);
+  }
+}
 
   Future<void> logout() async {
     SharedPreferences prefs =
@@ -256,64 +313,164 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Todo App"),
-        actions: [
-          IconButton(
-            onPressed: logout,
-            icon: const Icon(Icons.logout),
-          )
-        ],
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text(
+        "My Tasks",
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 26,
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
+
+      actions: [
+        IconButton(
+          onPressed: logout,
+          icon: const Icon(Icons.logout),
+        ),
+      ],
+    ),
+
+    body: Padding(
+      padding: const EdgeInsets.all(20),
+
+      child: Column(
+        children: [
+
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius:
+                  BorderRadius.circular(18),
+
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+
+            child: TextField(
               controller: titleController,
+
               decoration: const InputDecoration(
-                hintText: "Enter todo",
-                border: OutlineInputBorder(),
+                hintText: "Add a new task",
+                border: InputBorder.none,
+                contentPadding:
+                    EdgeInsets.all(18),
               ),
             ),
+          ),
 
-            const SizedBox(height: 10),
+          const SizedBox(height: 15),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: addTodo,
-                child: const Text("Add Todo"),
+          SizedBox(
+            width: double.infinity,
+            height: 55,
+
+            child: ElevatedButton(
+
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    const Color(0xFF6C63FF),
+
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(16),
+                ),
+              ),
+
+              onPressed: addTodo,
+
+              child: const Text(
+                "Add Task",
+
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 25),
 
-            Expanded(
-              child: ListView.builder(
-                itemCount: todos.length,
-                itemBuilder: (context, index) {
-                  final todo = todos[index];
+          Expanded(
+            child: ListView.builder(
+              itemCount: todos.length,
 
-                  return Card(
+              itemBuilder: (context, index) {
+
+                final todo = todos[index];
+
+                return Container(
+                  margin:
+                      const EdgeInsets.only(
+                    bottom: 14,
+                  ),
+
+                  child: Card(
                     child: ListTile(
-                      title: Text(todo['title']),
+
+                      contentPadding:
+                          const EdgeInsets.all(14),
+
+                      leading: Checkbox(
+
+                        value: todo['completed'],
+
+                        activeColor:
+                            const Color(0xFF6C63FF),
+
+                        onChanged: (value) {
+                          toggleTask(todo['id']);
+                        
+                        },
+        
+                      ),
+
+                    title: Text(
+
+                      todo['title'],
+
+                      style: TextStyle(
+
+                        fontWeight: FontWeight.w600,
+
+                        fontSize: 16,
+
+                        decoration:
+                            todo['completed']
+                            ? TextDecoration.lineThrough
+                            : null,
+  ),
+),
+
                       trailing: IconButton(
-                        icon: const Icon(Icons.delete),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                        ),
+
                         onPressed: () {
-                          deleteTodo(todo['id']);
+                          deleteTodo(
+                            todo['id'],
+                          );
                         },
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
