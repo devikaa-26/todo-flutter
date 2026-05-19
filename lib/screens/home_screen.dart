@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'main.dart';
+import 'ai_assistant_screen.dart';
+import '../main.dart';
 import 'dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -34,6 +34,7 @@ class _HomeScreenState
       DashboardScreen(
         token: widget.token,
       ),
+      AIAssistantScreen(),
     ];
   }
 
@@ -68,6 +69,10 @@ class _HomeScreenState
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: "Dashboard",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.auto_awesome),
+            label: "AI Assistant",
           ),
         ],
       ),

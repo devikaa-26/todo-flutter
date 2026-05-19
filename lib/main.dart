@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'home_screen.dart';
+import 'screens/home_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final response = await http.post(
         Uri.parse(
-          "http://10.0.2.2:8000/api/accounts/login/",
+          "http://127.0.0.1:8000/api/accounts/login/",
         ),
         headers: {
           "Content-Type": "application/json",
@@ -183,7 +183,7 @@ class _TodoScreenState extends State<TodoScreen> {
       TextEditingController();
 
   final String baseUrl =
-      "http://10.0.2.2:8000/api/tasks/";
+      "http://127.0.0.1:8000/api/tasks/";
 
 late String token;
 
@@ -221,7 +221,7 @@ void initState() {
     try {
       final response = await http.post(
         Uri.parse(
-          "http://10.0.2.2:8000/api/tasks/add/",
+          "http://127.0.0.1:8000/api/tasks/add/",
         ),
         headers: {
           "Authorization": "Bearer $token",
@@ -248,7 +248,7 @@ void initState() {
     try {
       final response = await http.delete(
         Uri.parse(
-          "http://10.0.2.2:8000/api/tasks/delete/$id/",
+          "http://127.0.0.1:8000/api/tasks/delete/$id/",
         ),
         headers: {
           "Authorization": "Bearer $token",
@@ -272,7 +272,7 @@ void initState() {
     final response = await http.patch(
 
       Uri.parse(
-        "http://10.0.2.2:8000/api/tasks/toggle/$id/",
+        "http://127.0.0.1:8000/api/tasks/toggle/$id/",
       ),
 
       headers: {
